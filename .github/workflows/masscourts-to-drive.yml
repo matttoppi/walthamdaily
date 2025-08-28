@@ -1,0 +1,38 @@
+name: MassCourts → Google Drive (daily)
+
+on:
+  schedule:
+    - cron: "5 11 * * *"   # 11:05 UTC ≈ 7:05am ET during DST
+  workflow_dispatch: {}
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare workspace
+        run: mkdir -p archive
+
+      - name: Download today's PDF
+        run: |
+          DATE=$(TZ=America/New_York date +%Y-%m-%d)
+          curl -fL --retry 5 --retry-delay 10 \
+            -o "walthamdaily_${DATE}.pdf" \
+            "https://www.masscourts.org/reports/DailyList_Site502.pdf"
+
+      - name: Setup rclone (from secret)
+        uses: AnimMouse/setup-rclone@v1
+        with:
+          rclone_config: ${{ secrets.RCLONE_CONFIG }}
+
+      - name: Ensure Drive folder
+        run: rclone mkdir "gdrive:MassCourtsDaily"
+
+      - name: Upload to Google Drive (clean filename)
+        run: |
+          DATE=$(TZ=America/New_York date +%Y-%m-%d)
+          rclone copyto "walthamdaily_${DATE}.pdf" \
+            "gdrive:walthamdaily_${DATE}.pdf" \
+            --drive-root-folder-id "1qxNrc6YRLGWP-EM6qPAIUi4qPMgLwNPL" -P
+
+      - name: List Drive folder (verify)
+        run: rclone ls "gdrive:MassCourtsDaily" | tail -n 5
