@@ -2,7 +2,7 @@ name: MassCourts → Google Drive (daily)
 
 on:
   schedule:
-    - cron: "30 11 * * *"   # 11:30 UTC ≈ 7:30am ET during DST
+    - cron: "0 14 * * *"  # 9:00 am ET during DST
   workflow_dispatch: {}
 
 jobs:
